@@ -7,6 +7,7 @@
   import { clickOutside } from '$lib/actions/click-outside';
   import NotificationPanel from '$lib/components/shared-components/navigation-bar/NotificationPanel.svelte';
   import SearchBar from '$lib/components/shared-components/search-bar/SearchBar.svelte';
+  import PartnerTimelineToggle from '$lib/custom/PartnerTimelineToggle.svelte';
   import SkipLink from '$lib/elements/SkipLink.svelte';
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import { featureFlagsManager } from '$lib/managers/feature-flags-manager.svelte';
@@ -124,6 +125,8 @@
             class="lg:hidden"
           />
         {/if}
+
+        <PartnerTimelineToggle />
 
         <ThemeButton />
 

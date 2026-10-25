@@ -18,6 +18,7 @@
   import { AssetAction } from '$lib/constants';
   import AlbumTile from '$lib/custom/AlbumTile.svelte';
   import { AlbumTiles } from '$lib/custom/album-tiles.svelte';
+  import { partnerTimeline } from '$lib/custom/partner-timeline.svelte';
   import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
   import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
   import { authManager } from '$lib/managers/auth-manager.svelte';
@@ -42,6 +43,8 @@
   let timelineManager = $state<TimelineManager>() as TimelineManager;
   const options = { visibility: AssetVisibility.Timeline, withStacked: true, withPartners: true };
   const albumTiles = new AlbumTiles();
+  // changed options reload the timeline in place; the version itself is not sent to the server
+  const timelineOptions = $derived({ ...options, partnerTimelineVersion: partnerTimeline.version });
 
   let selectedAssets = $derived(assetMultiSelectManager.assets);
   let isLinkActionAvailable = $derived.by(() => {
@@ -97,7 +100,7 @@
   <Timeline
     enableRouting={true}
     bind:timelineManager
-    {options}
+    options={timelineOptions}
     assetInteraction={assetMultiSelectManager}
     removeAction={AssetAction.ARCHIVE}
     onEscape={handleEscape}
