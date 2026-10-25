@@ -16,11 +16,14 @@
   import AssetSelectControlBar from '$lib/components/timeline/AssetSelectControlBar.svelte';
   import Timeline from '$lib/components/timeline/Timeline.svelte';
   import { AssetAction } from '$lib/constants';
+  import AlbumTile from '$lib/custom/AlbumTile.svelte';
+  import { AlbumTiles } from '$lib/custom/album-tiles.svelte';
   import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
   import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import { memoryManager } from '$lib/managers/memory-manager.svelte';
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
+  import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
   import { Route } from '$lib/route';
   import { getAssetBulkActions } from '$lib/services/asset.service';
   import { getStackBulkActions } from '$lib/services/stack.service';
@@ -38,6 +41,7 @@
 
   let timelineManager = $state<TimelineManager>() as TimelineManager;
   const options = { visibility: AssetVisibility.Timeline, withStacked: true, withPartners: true };
+  const albumTiles = new AlbumTiles();
 
   let selectedAssets = $derived(assetMultiSelectManager.assets);
   let isLinkActionAvailable = $derived.by(() => {
@@ -98,7 +102,14 @@
     removeAction={AssetAction.ARCHIVE}
     onEscape={handleEscape}
     withStacked
+    onThumbnailClick={albumTiles.onThumbnailClick}
   >
+    {#snippet customThumbnailLayout(asset: TimelineAsset)}
+      {@const album = albumTiles.getAlbum(asset)}
+      {#if album}
+        <AlbumTile {asset} {album} />
+      {/if}
+    {/snippet}
     {#if authManager.preferences.memories.enabled}
       <ImageCarousel {items}>
         {#snippet child(item)}

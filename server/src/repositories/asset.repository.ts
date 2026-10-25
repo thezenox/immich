@@ -15,6 +15,7 @@ import { jsonArrayFrom } from 'kysely/helpers/postgres';
 import { isEmpty, isUndefined, omitBy } from 'lodash-es';
 import { InjectKysely } from 'nestjs-kysely';
 import type { AuthDto } from 'src/dtos/auth.dto.js';
+import { albumTileRatio, getAlbumTiles, notInAlbumTile } from 'src/custom/album-tiles.js';
 import { LockableProperty, Stack } from 'src/database.js';
 import { Chunked, ChunkedArray, DummyValue, GenerateSql } from 'src/decorators.js';
 import {
@@ -751,6 +752,7 @@ export class AssetRepository {
 
   @GenerateSql({ params: [{}, { user: { id: DummyValue.UUID } }] })
   async getTimeBuckets(options: TimeBucketOptions, auth: AuthDto): Promise<TimeBucketItem[]> {
+    const albumTiles = await getAlbumTiles(this.db, options, auth);
     return this.db
       .with('asset', (qb) =>
         qb
@@ -799,6 +801,7 @@ export class AssetRepository {
           .$if(options.isDuplicate !== undefined, (qb) =>
             qb.where('asset.duplicateId', options.isDuplicate ? 'is not' : 'is', null),
           )
+          .$if(!!albumTiles, (qb) => qb.where(notInAlbumTile(albumTiles!)))
           .$if(!!options.tagId, (qb) => withTagId(qb, options.tagId!)),
       )
       .selectFrom('asset')
@@ -812,7 +815,8 @@ export class AssetRepository {
   @GenerateSql({
     params: [DummyValue.TIME_BUCKET, { withStacked: true }, { user: { id: DummyValue.UUID } }],
   })
-  getTimeBucket(timeBucket: string, options: TimeBucketOptions, auth: AuthDto) {
+  async getTimeBucket(timeBucket: string, options: TimeBucketOptions, auth: AuthDto) {
+    const albumTiles = await getAlbumTiles(this.db, options, auth);
     const order = options.order ?? 'desc';
     const query = this.db
       .with('cte', (qb) =>
@@ -917,6 +921,7 @@ export class AssetRepository {
             qb.where('asset.duplicateId', options.isDuplicate ? 'is not' : 'is', null),
           )
           .$if(!!options.isTrashed, (qb) => qb.where('asset.status', '!=', AssetStatus.Deleted))
+          .$if(!!albumTiles, (qb) => qb.where(notInAlbumTile(albumTiles!)))
           .$if(!!options.tagId, (qb) => withTagId(qb, options.tagId!))
           .orderBy(
             options.orderBy === AssetOrderBy.CreatedAt
@@ -944,7 +949,7 @@ export class AssetRepository {
             eb.fn.coalesce(eb.fn('array_agg', ['createdAt']), sql.lit('{}')).as('createdAt'),
             eb.fn.coalesce(eb.fn('array_agg', ['ownerId']), sql.lit('{}')).as('ownerId'),
             eb.fn.coalesce(eb.fn('array_agg', ['projectionType']), sql.lit('{}')).as('projectionType'),
-            eb.fn.coalesce(eb.fn('array_agg', ['ratio']), sql.lit('{}')).as('ratio'),
+            eb.fn.coalesce(eb.fn('array_agg', [albumTileRatio(albumTiles)]), sql.lit('{}')).as('ratio'),
             eb.fn.coalesce(eb.fn('array_agg', ['status']), sql.lit('{}')).as('status'),
             eb.fn.coalesce(eb.fn('array_agg', ['thumbhash']), sql.lit('{}')).as('thumbhash'),
           ])

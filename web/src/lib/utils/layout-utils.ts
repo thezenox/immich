@@ -1,6 +1,7 @@
 import { JustifiedLayout, type LayoutOptions } from '@immich/justified-layout-wasm';
 import type { AssetResponseDto } from '@immich/sdk';
 import createJustifiedLayout from 'justified-layout';
+import { getAlbumTileLayout } from '$lib/custom/album-tile-layout';
 import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
 import { getAssetRatio } from '$lib/utils/asset-utils';
 import { isTimelineAsset, isTimelineAssets } from '$lib/utils/timeline-util';
@@ -29,6 +30,10 @@ export function getJustifiedLayoutFromAssets(
   assets: TimelineAsset[] | AssetResponseDto[],
   options: CommonLayoutOptions,
 ): CommonJustifiedLayout {
+  const albumTileLayout = isTimelineAssets(assets) && getAlbumTileLayout(assets, options, getJustifiedLayoutFromAssets);
+  if (albumTileLayout) {
+    return albumTileLayout;
+  }
   if (useWasm) {
     return isTimelineAssets(assets) ? wasmLayoutFromTimeline(assets, options) : wasmLayoutFromDto(assets, options);
   }
